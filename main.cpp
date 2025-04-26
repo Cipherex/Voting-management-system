@@ -77,7 +77,7 @@ public:
         candidates[choice - 1].votes++;
         votedVoters.push_back(voterID);
 
-        cout << GREEN << "Your vote for " << candidates[choice - 1].name
+        cout << GREEN << "✅ Your vote for " << candidates[choice - 1].name
              << " (" << candidates[choice - 1].party << ") has been recorded!\n" << RESET;
     }
 
@@ -126,7 +126,7 @@ public:
                 }
             }
             
-            cout << "\n" << GREEN << "*** TIE DETECTED! *** The following candidates have tied with " 
+            cout << "\n" << GREEN << "🔄 TIE DETECTED! The following candidates have tied with " 
                  << highestVotes << " votes each:\n" << RESET;
                  
             for (const auto& c : tiedCandidates) {
@@ -137,7 +137,7 @@ public:
         } else if (!sortedCandidates.empty()) {
             // No tie - announce single winner
             const auto& winner = sortedCandidates.front();
-            cout << GREEN << "\nWinner: " << winner.name << " (" << winner.party
+            cout << GREEN << "\n🏆 Winner: " << winner.name << " (" << winner.party
                  << ") with " << winner.votes << " votes!\n" << RESET;
         }
     }
