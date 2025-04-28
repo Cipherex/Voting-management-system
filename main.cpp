@@ -1,22 +1,24 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdlib>
-#include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <iomanip>
 using namespace std;
 
-// Color codes - fixed to use standard escape sequences
-#define RESET   "\033[0m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define BLUE    "\033[34m"
+// Constants for color codes and formatting
+const string RESET = "\033[0m";
+const string RED = "\033[31m";
+const string GREEN = "\033[32m";
+const string YELLOW = "\033[33m";
+const string BLUE = "\033[34m";
 
-class VotingSystem {
+class VotingSystem
+{
 private:
-    struct Candidate {
+    struct Candidate
+    {
         string name;
         string party;
         int votes = 0;
@@ -24,465 +26,423 @@ private:
 
     vector<Candidate> candidates;
     vector<string> votedVoters;
-    string adminPassword = "admin123";
-    
-    // File paths for storing data
+    const string adminPassword = "admin123";
+
+    // File paths
     const string CANDIDATES_FILE = "candidates.txt";
-    const string VOTES_FILE = "votes.txt";
     const string VOTERS_FILE = "voters.txt";
 
+    void drawTableHeader(const string &title)
+    {
+        cout << "\n+" << string(58, '-') << "+\n";
+        cout << "| " << BLUE << left << setw(55) << title << RESET << " |\n";
+        cout << "+" << string(58, '-') << "+\n";
+    }
+
 public:
-    // Constructor now loads data from files
-    VotingSystem() {
+    VotingSystem()
+    {
         loadCandidates();
         loadVoterData();
     }
-    
-    // Destructor to ensure data is saved when program exits
-    ~VotingSystem() {
+
+    ~VotingSystem()
+    {
         saveCandidates();
         saveVoterData();
     }
 
-    void addDefaultCandidates() {
-        // Only add default candidates if there are none loaded
-        if (candidates.empty()) {
-            candidates.push_back({"YOGI ADITYA NATH", "BJP", 0});
-            candidates.push_back({"Nitish Kumar", "Coalition Govt", 0});
-            candidates.push_back({"Uddhav Thackeray", "Shiv Sena", 0});
-            candidates.push_back({"Ashok Gehlot", "INC", 0});
-            candidates.push_back({"Nayab Singh Saini", "TMC", 0});
-            
-            // Save the default candidates to file
-            saveCandidates();
-            cout << BLUE << "Default candidates have been added.\n" << RESET;
+    int getValidInput(const string &prompt, int min, int max)
+    {
+        int choice;
+        while (true)
+        {
+            cout << prompt;
+            cin >> choice;
+            if (cin.fail() || choice < min || choice > max)
+            {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << RED << "Invalid input! Please enter between "
+                     << min << "-" << max << RESET << "\n";
+                continue;
+            }
+            break;
         }
+        return choice;
     }
 
-    // File I/O Functions
-    void loadCandidates() {
+    void loadCandidates()
+    {
         ifstream file(CANDIDATES_FILE);
-        
-        if (!file.is_open()) {
-            cout << YELLOW << "No existing candidates file found. Will create a new one when needed.\n" << RESET;
+        if (!file)
+        {
+            cout << YELLOW << "No candidates file found. New file will be created.\n"
+                 << RESET;
             return;
         }
-        
-        string line;
+
         candidates.clear();
-        
-        while (getline(file, line)) {
+        string line;
+        while (getline(file, line))
+        {
             stringstream ss(line);
             string name, party, votesStr;
-            
-            // Format: name|party|votes
-            getline(ss, name, '|');
-            getline(ss, party, '|');
-            getline(ss, votesStr, '|');
-            
-            int votes = stoi(votesStr);
-            candidates.push_back({name, party, votes});
-        }
-        
-        file.close();
-        cout << BLUE << "Candidates and vote counts loaded from file.\n" << RESET;
-    }
-    
-    void saveCandidates() {
-        ofstream file(CANDIDATES_FILE);
-        
-        if (!file.is_open()) {
-            cout << RED << "Error: Could not open candidates file for writing.\n" << RESET;
-            return;
-        }
-        
-        for (const auto& c : candidates) {
-            file << c.name << "|" << c.party << "|" << c.votes << endl;
-        }
-        
-        file.close();
-        cout << BLUE << "Candidates and vote counts saved to file.\n" << RESET;
-    }
-    
-    void loadVoterData() {
-        ifstream file(VOTERS_FILE);
-        
-        if (!file.is_open()) {
-            cout << YELLOW << "No existing voters file found. Will create a new one when needed.\n" << RESET;
-            return;
-        }
-        
-        string voterID;
-        votedVoters.clear();
-        
-        while (getline(file, voterID)) {
-            votedVoters.push_back(voterID);
-        }
-        
-        file.close();
-        cout << BLUE << "Voter data loaded from file.\n" << RESET;
-    }
-    
-    void saveVoterData() {
-        ofstream file(VOTERS_FILE);
-        
-        if (!file.is_open()) {
-            cout << RED << "Error: Could not open voters file for writing.\n" << RESET;
-            return;
-        }
-        
-        for (const auto& voterID : votedVoters) {
-            file << voterID << endl;
-        }
-        
-        file.close();
-        cout << BLUE << "Voter data saved to file.\n" << RESET;
-    }
 
-    void showCandidates() {
-        cout << "\n+------+----------------------+----------------------+\n";
-        cout << "| No.  |        Name          |        Party        |\n";
-        cout << "+------+----------------------+----------------------+\n";
+            try
+            {
+                getline(ss, name, '|');
+                getline(ss, party, '|');
+                getline(ss, votesStr);
 
-        for (size_t i = 0; i < candidates.size(); ++i) {
-            cout << "| " << i + 1;
-            if (i + 1 < 10) cout << "    ";
-            else cout << "   ";
-            
-            cout << "| ";
-            cout.width(20); cout << left << candidates[i].name << "| ";
-            cout.width(20); cout << left << candidates[i].party << "|\n";
-            cout << "+------+----------------------+----------------------+\n";
-        }
-        cout << "\n";
-    }
+                if (name.empty() || party.empty() || votesStr.empty())
+                    throw invalid_argument("Invalid data format");
 
-    bool hasVoted(const string& voterID) {
-        for (const auto& voter : votedVoters) {
-            if (voter == voterID) {
-                return true;
+                candidates.push_back({name, party, stoi(votesStr)});
+            }
+            catch (...)
+            {
+                cout << RED << "Error loading candidate: " << line << RESET << "\n";
             }
         }
-        return false;
     }
 
-    void castVote(const string& voterID) {
-        if (hasVoted(voterID)) {
-            cout << RED << "You have already voted! Duplicate voting is not allowed.\n" << RESET;
+    void saveCandidates()
+    {
+        ofstream file(CANDIDATES_FILE);
+        if (!file)
+        {
+            cout << RED << "Failed to save candidates!\n"
+                 << RESET;
+            return;
+        }
+
+        for (const auto &c : candidates)
+        {
+            file << c.name << "|" << c.party << "|" << c.votes << "\n";
+        }
+    }
+
+    void loadVoterData()
+    {
+        ifstream file(VOTERS_FILE);
+        if (!file)
+            return;
+
+        votedVoters.clear();
+        string voterID;
+        while (getline(file, voterID))
+        {
+            if (!voterID.empty())
+            {
+                votedVoters.push_back(voterID);
+            }
+        }
+    }
+
+    void saveVoterData()
+    {
+        ofstream file(VOTERS_FILE);
+        if (!file)
+        {
+            cout << RED << "Failed to save voter data!\n"
+                 << RESET;
+            return;
+        }
+
+        for (const auto &id : votedVoters)
+        {
+            file << id << "\n";
+        }
+    }
+
+    void showCandidates()
+    {
+        drawTableHeader("CANDIDATE LIST");
+        cout << "| " << left << setw(3) << "No."
+             << "| " << setw(25) << "Name"
+             << "| " << setw(25) << "Party" << " |\n";
+        cout << "+" << string(58, '-') << "+\n";
+
+        for (size_t i = 0; i < candidates.size(); ++i)
+        {
+            cout << "| " << setw(3) << i + 1
+                 << "| " << setw(25) << candidates[i].name
+                 << "| " << setw(25) << candidates[i].party << " |\n";
+        }
+        cout << "+" << string(58, '-') << "+\n\n";
+    }
+
+    void castVote(const string &voterID)
+    {
+        if (find(votedVoters.begin(), votedVoters.end(), voterID) != votedVoters.end())
+        {
+            cout << RED << "You have already voted!\n"
+                 << RESET;
             return;
         }
 
         showCandidates();
-        cout << "Enter the number of the candidate you want to vote for: ";
-        int choice;
-        cin >> choice;
-
-        if (choice < 1 || choice > static_cast<int>(candidates.size())) {
-            cout << RED << "Invalid choice! Vote cancelled.\n" << RESET;
-            return;
-        }
+        int choice = getValidInput("Enter candidate number: ", 1, candidates.size());
 
         candidates[choice - 1].votes++;
         votedVoters.push_back(voterID);
+        cout << GREEN << "Vote recorded successfully!\n"
+             << RESET;
 
-        cout << GREEN << "Your vote for " << candidates[choice - 1].name
-             << " (" << candidates[choice - 1].party << ") has been recorded!\n" << RESET;
-        
-        // Save the updated data immediately
         saveCandidates();
         saveVoterData();
     }
 
-    void showResults() {
-        if (candidates.empty()) {
-            cout << RED << "No candidates to show.\n" << RESET;
+    void showResults()
+    {
+        if (candidates.empty())
+        {
+            cout << RED << "No candidates to show!\n"
+                 << RESET;
             return;
         }
 
-        // Sort candidates by vote count in descending order
-        vector<Candidate> sortedCandidates = candidates;
-        sort(sortedCandidates.begin(), sortedCandidates.end(), [](const Candidate& a, const Candidate& b) {
-            return a.votes > b.votes;
-        });
+        vector<Candidate> sorted = candidates;
+        sort(sorted.begin(), sorted.end(), [](const Candidate &a, const Candidate &b)
+             { return a.votes > b.votes; });
 
-        cout << "\n+======================================================+\n";
-        cout << "|                  VOTING RESULTS                      |\n";
-        cout << "+------+----------------------+----------------+--------+\n";
-        cout << "| Rank |        Name          |     Party     | Votes  |\n";
-        cout << "+------+----------------------+----------------+--------+\n";
+        drawTableHeader("VOTING RESULTS");
+        cout << "| " << left << setw(3) << "No."
+             << "| " << setw(25) << "Name"
+             << "| " << setw(15) << "Party"
+             << "| " << setw(10) << "Votes" << " |\n";
+        cout << "+" << string(58, '-') << "+\n";
 
-        for (size_t i = 0; i < sortedCandidates.size(); ++i) {
-            const auto& c = sortedCandidates[i];
-            cout << "|  " << i + 1;
-            if (i + 1 < 10) cout << "   ";
-            else cout << "  ";
-            
-            cout << "| ";
-            cout.width(20); cout << left << c.name << "| ";
-            cout.width(14); cout << left << c.party << "| ";
-            cout.width(6); cout << right << c.votes << " |\n";
-            cout << "+------+----------------------+----------------+--------+\n";
+        int totalVotes = 0;
+        for (const auto &c : sorted)
+            totalVotes += c.votes;
+
+        for (size_t i = 0; i < sorted.size(); ++i)
+        {
+            cout << "| " << setw(3) << i + 1
+                 << "| " << setw(25) << sorted[i].name
+                 << "| " << setw(15) << sorted[i].party
+                 << "| " << setw(10) << sorted[i].votes << " |\n";
         }
+        cout << "+" << string(58, '-') << "+\n";
 
-        // Check for ties and handle them
-        if (sortedCandidates.size() >= 2 && sortedCandidates[0].votes == sortedCandidates[1].votes && sortedCandidates[0].votes > 0) {
-            // Create a list of candidates with the highest vote count
-            vector<Candidate> tiedCandidates;
-            int highestVotes = sortedCandidates[0].votes;
-            
-            for (const auto& c : sortedCandidates) {
-                if (c.votes == highestVotes) {
-                    tiedCandidates.push_back(c);
-                } else {
-                    break; // Only collect candidates with the highest votes
+        if (totalVotes > 0)
+        {
+            cout << GREEN << "\nTotal votes cast: " << totalVotes << RESET << "\n";
+
+            // Check for tie
+            vector<Candidate> leaders;
+            if (!sorted.empty() && sorted[0].votes > 0)
+            {
+                int maxVotes = sorted[0].votes;
+                for (const auto &c : sorted)
+                {
+                    if (c.votes == maxVotes)
+                        leaders.push_back(c);
+                    else
+                        break;
                 }
             }
-            
-            cout << "\n" << GREEN << "*** TIE DETECTED! *** The following candidates have tied with " 
-                 << highestVotes << " votes each:\n" << RESET;
-                 
-            for (const auto& c : tiedCandidates) {
-                cout << GREEN << "- " << c.name << " (" << c.party << ")\n" << RESET;
+
+            if (!leaders.empty())
+            {
+                if (leaders.size() > 1)
+                {
+                    cout << YELLOW << "\nTIE BETWEEN " << leaders.size() << " CANDIDATES:\n"
+                         << RESET;
+                    for (const auto &c : leaders)
+                    {
+                        cout << YELLOW << "- " << c.name << " (" << c.party << ") "
+                             << c.votes << " votes\n"
+                             << RESET;
+                    }
+                }
+                else
+                {
+                    cout << GREEN << "Leading candidate: " << sorted[0].name
+                         << " (" << sorted[0].party << ") with "
+                         << sorted[0].votes << " votes\n"
+                         << RESET;
+                }
             }
-            
-            cout << GREEN << "A runoff election may be needed to determine the winner.\n" << RESET;
-        } else if (!sortedCandidates.empty() && sortedCandidates[0].votes > 0) {
-            // No tie - announce single winner
-            const auto& winner = sortedCandidates.front();
-            cout << GREEN << "\nWinner: " << winner.name << " (" << winner.party
-                 << ") with " << winner.votes << " votes!\n" << RESET;
-        } else {
-            cout << YELLOW << "\nNo votes have been cast yet.\n" << RESET;
+        }
+        else
+        {
+            cout << YELLOW << "\nNo votes cast yet!\n"
+                 << RESET;
         }
     }
 
-    void addCandidate() {
-        string name;
-        string party;
-        
-        cout << "Enter the name of the new candidate: ";
-        cin.ignore();  // clear input buffer
-        getline(cin, name);
-        
-        cout << "Enter the party of the new candidate: ";
-        getline(cin, party);
-        
-        candidates.push_back({name, party, 0});
-        cout << GREEN << "Candidate added successfully.\n" << RESET;
-        
-        // Save immediately after adding a candidate
-        saveCandidates();
-    }
-
-    void countCandidates() {
-        cout << "\n+=============================================+\n";
-        cout << "|             CANDIDATE DETAILS              |\n";
-        cout << "+=============================================+\n";
-        cout << "| Total number of candidates: " << candidates.size() << "\n\n";
-
-        for (size_t i = 0; i < candidates.size(); ++i) {
-            cout << "| " << i + 1 << ". Name: " << candidates[i].name
-                 << ", Party: " << candidates[i].party << "\n";
-        }
-        cout << "+=============================================+\n\n";
-    }
-
-    void deleteCandidate() {
-        if (candidates.empty()) {
-            cout << RED << "No candidates to delete.\n" << RESET;
-            return;
-        }
-        
-        showCandidates();
-        cout << "Enter the number of the candidate you want to delete: ";
+    void adminMenu()
+    {
         int choice;
-        cin >> choice;
+        do
+        {
+            cout << "\n"
+                 << BLUE << "ADMIN MENU\n"
+                 << RESET;
+            cout << "1. Add Candidate\n"
+                 << "2. Delete Candidate\n"
+                 << "3. View Results\n"
+                 << "4. Reset System\n"
+                 << "5. Return to Main Menu\n";
 
-        if (choice < 1 || choice > static_cast<int>(candidates.size())) {
-            cout << RED << "Invalid choice! Deletion cancelled.\n" << RESET;
+            choice = getValidInput("Enter choice: ", 1, 5);
+
+            switch (choice)
+            {
+            case 1:
+                addCandidate();
+                break;
+            case 2:
+                deleteCandidate();
+                break;
+            case 3:
+                showResults();
+                break;
+            case 4:
+                resetSystem();
+                break;
+            }
+        } while (choice != 5);
+    }
+
+    // Add this public method to allow access to adminPassword
+    string getAdminPassword() const
+    {
+        return adminPassword;
+    }
+
+    void deleteCandidate()
+    {
+        if (candidates.empty())
+        {
+            cout << RED << "No candidates to delete!" << RESET << "\n";
+            return;
+        }
+        showCandidates();
+        int idx = getValidInput("Enter candidate number to delete: ", 1, candidates.size());
+
+        // Confirmation prompt
+        cout << YELLOW << "Are you sure you want to delete " << candidates[idx - 1].name
+             << " (" << candidates[idx - 1].party << ")? (y/N): " << RESET;
+        char confirm;
+        cin >> confirm;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        if (tolower(confirm) != 'y')
+        {
+            cout << YELLOW << "Deletion cancelled.\n"
+                 << RESET;
             return;
         }
 
-        cout << GREEN << "Candidate " << candidates[choice - 1].name
-             << " (" << candidates[choice - 1].party << ") has been deleted.\n" << RESET;
-        candidates.erase(candidates.begin() + (choice - 1));
-        
-        // Save immediately after deleting a candidate
+        candidates.erase(candidates.begin() + (idx - 1));
         saveCandidates();
+        cout << GREEN << "Candidate deleted successfully!" << RESET << "\n";
     }
 
-    void showVoters() {
-        if (votedVoters.empty()) {
-            cout << RED << "No voters have voted yet.\n" << RESET;
+    void resetSystem()
+    {
+        // Confirmation prompt
+        cout << YELLOW << "Are you sure you want to reset the system? "
+             << "This will delete ALL data! (y/N): " << RESET;
+        char confirm;
+        cin >> confirm;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        if (tolower(confirm) != 'y')
+        {
+            cout << YELLOW << "System reset cancelled.\n"
+                 << RESET;
             return;
         }
-        
-        cout << "\n+=============================================+\n";
-        cout << "|               LIST OF VOTERS               |\n";
-        cout << "+-----+------------------------------------+\n";
-        cout << "| No. |              Voter ID              |\n";
-        cout << "+-----+------------------------------------+\n";
-        
-        for (size_t i = 0; i < votedVoters.size(); ++i) {
-            cout << "| " << i + 1;
-            if (i + 1 < 10) cout << "   ";
-            else cout << "  ";
-            
-            cout << "| " << votedVoters[i];
-            // Pad to align with table width
-            int padding = 34 - votedVoters[i].length();
-            for (int j = 0; j < padding; j++) {
-                cout << " ";
+
+        candidates.clear();
+        votedVoters.clear();
+        saveCandidates();
+        saveVoterData();
+        cout << GREEN << "System reset successfully!" << RESET << "\n";
+    }
+
+    void addCandidate()
+    {
+        string name, party;
+        cout << "Enter candidate name: ";
+        cin.ignore();
+        getline(cin, name);
+        cout << "Enter party name: ";
+        getline(cin, party);
+
+        if (name.empty() || party.empty())
+        {
+            cout << RED << "Name and party cannot be empty!" << RESET << "\n";
+            return;
+        }
+
+        // Check for existing candidate
+        for (const auto &c : candidates)
+        {
+            if (c.name == name && c.party == party)
+            {
+                cout << RED << "Candidate already exists!\n"
+                     << RESET;
+                return;
             }
-            cout << "|\n";
-            cout << "+-----+------------------------------------+\n";
         }
-        cout << "\n";
-    }
-    
-    void resetSystem() {
-        string confirmation;
-        cout << RED << "WARNING: This will reset all votes and clear all voter records.\n";
-        cout << "Type 'CONFIRM' to proceed or anything else to cancel: " << RESET;
-        cin >> confirmation;
-        
-        if (confirmation == "CONFIRM") {
-            // Reset all vote counts to 0
-            for (auto& candidate : candidates) {
-                candidate.votes = 0;
-            }
-            
-            // Clear voter list
-            votedVoters.clear();
-            
-            // Save the reset data
-            saveCandidates();
-            saveVoterData();
-            
-            cout << GREEN << "Voting system has been reset. All votes cleared.\n" << RESET;
-        } else {
-            cout << BLUE << "Reset operation cancelled.\n" << RESET;
-        }
-    }
 
-    void adminLogin() {
-        #ifdef _WIN32
-            system("cls");  // Windows
-        #else
-            system("clear"); // Unix/Linux
-        #endif
-        
-        string password;
-        cout << "Enter Admin Password: ";
-        cin >> password;
-        
-        if (password == adminPassword) {
-            int choice;
-            do {
-                cout << "\n+------------------------------+\n";
-                cout << "|         ADMIN MENU          |\n";
-                cout << "+------------------------------+\n";
-                cout << "| 1. Add Candidate            |\n";
-                cout << "| 2. Delete Candidate         |\n";
-                cout << "| 3. View Results             |\n";
-                cout << "| 4. View Candidates Details  |\n";
-                cout << "| 5. Show Voters              |\n";
-                cout << "| 6. Reset Voting System      |\n";
-                cout << "| 7. Save Data to Files       |\n";
-                cout << "| 8. Load Data from Files     |\n";
-                cout << "| 9. Logout                   |\n";
-                cout << "+------------------------------+\n";
-                cout << "Enter your choice: ";
-                cin >> choice;
-
-                switch (choice) {
-                    case 1:
-                        addCandidate();
-                        break;
-                    case 2:
-                        deleteCandidate();
-                        break;
-                    case 3:
-                        showResults();
-                        break;
-                    case 4:
-                        countCandidates();
-                        break;
-                    case 5:
-                        showVoters();
-                        break;
-                    case 6:
-                        resetSystem();
-                        break;
-                    case 7:
-                        saveCandidates();
-                        saveVoterData();
-                        break;
-                    case 8:
-                        loadCandidates();
-                        loadVoterData();
-                        break;
-                    case 9:
-                        cout << GREEN << "Logging out...\n" << RESET;
-                        break;
-                    default:
-                        cout << RED << "Invalid choice!\n" << RESET;
-                }
-            } while (choice != 9);
-        } else {
-            cout << RED << "Wrong password! Access denied.\n" << RESET;
-        }
-    }
-
-    void voterLogin() {
-        string voterID;
-        cout << "Enter your Voter ID (must be unique): ";
-        cin >> voterID;
-        castVote(voterID);
+        candidates.push_back({name, party, 0});
+        saveCandidates();
+        cout << GREEN << "Candidate added successfully!" << RESET << "\n";
     }
 };
 
-int main() {
+int main()
+{
     VotingSystem vs;
-    
-    cout << "\n";
-    cout << "+--------------------------------------+\n";
-    cout << "|                                      |\n";
-    cout << "|               WELCOME                |\n";
-    cout << "|            VOTING SYSTEM             |\n";
-    cout << "|                                      |\n";
-    cout << "+--------------------------------------+\n";
-    cout << "\n";
-    
-    // Add default candidates only if there are no candidates loaded from file
-    if (vs.addDefaultCandidates(), true) {}
 
-    int option;
-    do {
-        cout << "\n+------------------------------+\n";
-        cout << "|           MAIN MENU          |\n";
-        cout << "+------------------------------+\n";
-        cout << "| 1. Admin Login              |\n";
-        cout << "| 2. Voter Login              |\n";
-        cout << "| 3. Exit                     |\n";
-        cout << "+------------------------------+\n";
-        cout << "Choose an option: ";
-        cin >> option;
-        
-        switch (option) {
-            case 1:
-                vs.adminLogin();
-                break;
-            case 2:
-                vs.voterLogin();
-                break;
-            case 3:
-                cout << GREEN << "Thank you for using the Voting System. Goodbye!\n" << RESET;
-                break;
-            default:
-                cout << RED << "Invalid choice! Please try again.\n" << RESET;
+    cout << "\n"
+         << BLUE << "VOTING SYSTEM" << RESET << "\n";
+
+    while (true)
+    {
+        cout << "\nMAIN MENU\n"
+             << "1. Admin Login\n"
+             << "2. Voter Login\n"
+             << "3. Exit\n";
+
+        int choice = vs.getValidInput("Enter choice: ", 1, 3);
+
+        if (choice == 1)
+        {
+            string password;
+            cout << "Enter admin password: ";
+            cin >> password;
+
+            if (password == vs.getAdminPassword())
+            {
+                vs.adminMenu();
+            }
+            else
+            {
+                cout << RED << "Incorrect password!\n"
+                     << RESET;
+            }
         }
-    } while (option != 3);
-
+        else if (choice == 2)
+        {
+            string voterID;
+            cout << "Enter voter ID: ";
+            cin >> voterID;
+            vs.castVote(voterID);
+        }
+        else
+        {
+            cout << GREEN << "Exiting system...\n"
+                 << RESET;
+            break;
+        }
+    }
     return 0;
 }

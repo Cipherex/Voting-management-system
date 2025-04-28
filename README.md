@@ -4,7 +4,6 @@ A console-based voting application with administrative controls, persistent data
 
 ## Table of Contents
 - [Features](#features)
-- [Screenshots](#screenshots)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Admin Access](#admin-access)
@@ -22,10 +21,7 @@ A console-based voting application with administrative controls, persistent data
 - **Admin Functionality**:
   - Add/delete candidates
   - View real-time voting results 
-  - View detailed candidate information
-  - Track voters who have participated
   - Reset the entire voting system
-  - Save/load data from files
 - **Voter Functionality**:
   - Single vote per voter ID (duplicate prevention)
   - Clear display of candidate options
@@ -37,12 +33,9 @@ A console-based voting application with administrative controls, persistent data
   - Prevention of duplicate voting
 - **Results Handling**:
   - Detailed vote counting
-  - Automatic tie detection with runoff suggestion
+  - Automatic tie detection
   - Sorted results display
 
-## Screenshots
-
-*[Add screenshots of your application here]*
 
 ## Installation
 
@@ -80,12 +73,8 @@ The application starts with a main menu offering three options:
   1. Add Candidate
   2. Delete Candidate
   3. View Results
-  4. View Candidates Details
-  5. Show Voters
-  6. Reset Voting System
-  7. Save Data to Files
-  8. Load Data from Files
-  9. Logout
+  4. Reset Voting System
+  5. Return to main menu
 
 ### Voter Access
 - Requires unique Voter ID for each vote
@@ -97,7 +86,6 @@ The application starts with a main menu offering three options:
 The system maintains three data files:
 - `candidates.txt`: Stores candidate information and vote counts
 - `voters.txt`: Keeps a record of voter IDs who have already voted
-- `votes.txt`: Additional voting record storage
 
 Data format in `candidates.txt`:
 ```
