@@ -38,6 +38,13 @@ A console-based voting application with administrative controls, persistent data
 
 
 ## Installation
+```bash
+git clone https://github.com/Cipherex/Voting-management-system
+
+```
+```bash
+cd Voting-management-system
+```
 
 ### Prerequisites
 - C++ compiler (GCC, Clang, MSVC, etc.)
@@ -47,7 +54,7 @@ A console-based voting application with administrative controls, persistent data
 
 #### Using G++:
 ```bash
-g++ -o voting_system main.cpp
+g++ -o main.cpp
 ```
 
 #### Using Visual Studio:
@@ -59,7 +66,7 @@ g++ -o voting_system main.cpp
 
 ### Running the Application
 ```bash
-./voting_system
+./main
 ```
 
 The application starts with a main menu offering three options:
@@ -107,5 +114,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
-
-*Note: This voting system is designed for educational purposes and small-scale elections. For large-scale or critical elections, additional security measures should be implemented.*
